@@ -1,29 +1,20 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10
+FROM python:3.11-slim
 
 # Install Poetry
-RUN set -xe && \
-    curl -sSL https://install.python-poetry.org | python3 - && \
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+RUN pip install poetry
 
-# Update PATH for poetry
-ENV PATH="/root/.local/bin:$PATH"
+# Set the working directory
+WORKDIR /application
 
-# Verify Poetry installation
-RUN poetry --version
-
-# Set up the working directory
-WORKDIR /app
-
-# Copy the application code into the container
-COPY . /app
+# Copy pyproject.toml and poetry.lock to the working directory
+COPY pyproject.toml poetry.lock ./
 
 # Install dependencies using Poetry
-RUN poetry install
+RUN poetry install --no-root
 
-# Expose the application's port
-EXPOSE 8000
+# Copy the rest of the application cosudode into the container
+COPY . .
 
-# Start the application
-CMD ["bash", "-c", "poetry run bash ./prestart.sh && poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"]
+ENV PYTHONPATH=/application
 
+CMD poetry run bash ./prestart.sh; poetry run uvicorn app.main:app --host 0.0.0.0
